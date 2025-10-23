@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家事パスLINE 自動返信メール作成ツール</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        function KajiPassAutoReply() {
+            const [activeTab, setActiveTab] = useState('messages');
+            const [emailContent, setEmailContent] = useState('');
+            const [senderName, setSenderName] = useState('');
+            const [emailSubject, setEmailSubject] = useState('');
+            const [replyText, setReplyText] = useState('');
+            const [copied, setCopied] = useState(false);
+            const [selectedTemplate, setSelectedTemplate] = useState('');
+
+            // 家事パスLINE専用の返信テンプレート
+            const replyTemplates = {
+                'inquiry': {
+                    title: 'お問い合わせ',
+                    template: `お疲れ様です。
+
+家事パスの担当者　伊与田です。
+
+お問い合わせいただき、ありがとうございます。
+
+内容を確認して、改めてご連絡いたします。
+
+家事パスでは、お掃除や不用品回収などの家事をお手伝いします。
+
+ご不明な点がございましたら、お気軽にお声かけください。
+
+家事パス
+担当者　伊与田
+
+LINE: https://kchlg1kw.autosns.app/line`
+                },
+                'service': {
+                    title: 'サービス利用',
+                    template: `お疲れ様です。
+
+家事パスの担当者　伊与田です。
+
+サービスをご利用いただき、ありがとうございます。
+
+家事パスでは、以下のサービスを提供しています：
+
+・お掃除
+・不用品回収
+・買い物
+・洗濯
+
+【利用方法】
+1. LINEに友達追加
+2. サービスを選択
+3. 日時を指定
+
+ご質問がございましたら、お気軽にお声かけください。
+
+家事パス
+担当者　伊与田
+
+LINE: https://kchlg1kw.autosns.app/line`
+                },
+                'booking': {
+                    title: '予約・申し込み',
+                    template: `お疲れ様です。
+
+家事パスの担当者　伊与田です。
+
+ご予約いただき、ありがとうございます。
+
+予約内容を確認して、改めてご連絡いたします。
+
+【確認事項】
+・ご希望のサービス
+・ご利用日時
+・ご利用場所
+
+予約確定後、詳細をお送りします。
+
+ご不明な点がございましたら、お気軽にお声かけください。
+
+家事パス
+担当者　伊与田
+
+LINE: https://kchlg1kw.autosns.app/line`
+                },
+                'pricing': {
+                    title: '料金・プラン',
+                    template: `お疲れ様です。
+
+家事パスの担当者　伊与田です。
+
+料金についてお問い合わせいただき、ありがとうございます。
+
+【料金】
+・1時間: 3,000円〜
+・3時間: 8,000円〜
+・6時間: 15,000円〜
+
+【追加サービス】
+・不用品回収: +500円/時間
+・買い物: +300円/回
+・洗濯: +200円/回
+
+【お支払い】
+・現金
+・銀行振込
+・クレジットカード
+
+詳細な料金表をお送りします。
+
+家事パス
+担当者　伊与田
+
+LINE: https://kchlg1kw.autosns.app/line`
+                },
+                'general': {
+                    title: '一般的な返信',
+                    template: `お疲れ様です。
+
+家事パスの担当者　伊与田です。
+
+お問い合わせいただき、ありがとうございます。
+
+内容を確認して、改めてご連絡いたします。
+
+家事パスでは、お掃除や不用品回収などの家事をお手伝いします。
+
+ご不明な点がございましたら、お気軽にお声かけください。
+
+家事パス
+担当者　伊与田
+
+LINE: https://kchlg1kw.autosns.app/line`
+                }
+            };
+
+            const generateReply = () => {
+                if (!emailContent.trim()) {
+                    alert('メール内容を入力してください');
+                    return;
+                }
+
+                if (!selectedTemplate) {
+                    alert('返信テンプレートを選択してください');
+                    return;
+                }
+
+                const template = replyTemplates[selectedTemplate];
+                if (template) {
+                    setReplyText(template.template);
+                }
+            };
+
+            const copyToClipboard = () => {
+                navigator.clipboard.writeText(replyText);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            };
+
+            const clearForm = () => {
+                setEmailContent('');
+                setSenderName('');
+                setEmailSubject('');
+                setReplyText('');
+                setSelectedTemplate('');
+            };
+
+            const sendEmail = () => {
+                if (!replyText.trim()) {
+                    alert('返信文を生成してください');
+                    return;
+                }
+
+                // メール送信のためのmailtoリンクを作成
+                const subject = emailSubject.startsWith('Re:') ? emailSubject : `Re: ${emailSubject}`;
+                const mailtoLink = `mailto:${senderName}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(replyText)}`;
+                
+                window.open(mailtoLink);
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 p-4">
+                    <div className="max-w-2xl mx-auto">
+                        <div className="bg-white rounded-t-xl shadow-lg p-6">
+                            <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                                家事パスLINE 自動返信メール作成ツール
+                                <span className="ml-2 text-sm bg-green-500 text-white px-2 py-1 rounded">専用版</span>
+                            </h1>
+                            <p className="text-gray-600 text-sm">家事パスLINE専用の返信メール生成ツール</p>
+                            <p className="text-xs text-gray-500 mt-1">LINE公式アカウント: https://kchlg1kw.autosns.app/line</p>
+                        </div>
+
+                        <div className="flex bg-white border-t border-gray-200">
+                            <button
+                                onClick={() => setActiveTab('messages')}
+                                className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
+                                    activeTab === 'messages'
+                                        ? 'bg-green-500 text-white'
+                                        : 'bg-white text-gray-600 hover:bg-gray-50'
+                                }`}
+                            >
+                                メール返信
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('templates')}
+                                className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
+                                    activeTab === 'templates'
+                                        ? 'bg-green-500 text-white'
+                                        : 'bg-white text-gray-600 hover:bg-gray-50'
+                                }`}
+                            >
+                                テンプレート
+                            </button>
+                        </div>
+
+                        <div className="bg-white rounded-b-xl shadow-lg p-6 min-h-[500px]">
+                            {activeTab === 'messages' ? (
+                                <div>
+                                    <div className="space-y-4 mb-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                送信者名
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={senderName}
+                                                onChange={(e) => setSenderName(e.target.value)}
+                                                placeholder="送信者の名前を入力"
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                件名
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={emailSubject}
+                                                onChange={(e) => setEmailSubject(e.target.value)}
+                                                placeholder="メールの件名を入力"
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                メール内容
+                                            </label>
+                                            <textarea
+                                                value={emailContent}
+                                                onChange={(e) => setEmailContent(e.target.value)}
+                                                placeholder="返信したいメールの内容を貼り付けてください"
+                                                rows="6"
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                返信テンプレートを選択
+                                            </label>
+                                            <select
+                                                value={selectedTemplate}
+                                                onChange={(e) => setSelectedTemplate(e.target.value)}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                            >
+                                                <option value="">テンプレートを選択してください</option>
+                                                <option value="inquiry">お問い合わせ</option>
+                                                <option value="service">サービス利用</option>
+                                                <option value="booking">予約・申し込み</option>
+                                                <option value="pricing">料金・プラン</option>
+                                                <option value="general">一般的な返信</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2 mb-4">
+                                        <button
+                                            onClick={generateReply}
+                                            disabled={!emailContent.trim() || !selectedTemplate}
+                                            className="flex-1 py-3 px-4 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 disabled:bg-gray-300 transition-colors flex items-center justify-center"
+                                        >
+                                            返信文を生成
+                                        </button>
+                                        <button
+                                            onClick={clearForm}
+                                            className="py-3 px-4 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors"
+                                        >
+                                            クリア
+                                        </button>
+                                    </div>
+
+                                    {replyText && (
+                                        <div className="border-t pt-6">
+                                            <h3 className="font-bold text-lg mb-3 text-gray-800">生成された返信文</h3>
+                                            <div className="bg-gray-50 rounded-lg p-4 mb-3">
+                                                <pre className="whitespace-pre-wrap text-sm text-gray-800 font-sans">{replyText}</pre>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={copyToClipboard}
+                                                    className="flex-1 py-3 px-4 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors flex items-center justify-center"
+                                                >
+                                                    {copied ? 'コピーしました！' : '返信文をコピー'}
+                                                </button>
+                                                <button
+                                                    onClick={sendEmail}
+                                                    className="flex-1 py-3 px-4 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors flex items-center justify-center"
+                                                >
+                                                    メール送信
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                                        <h3 className="font-bold text-green-800 mb-2">🏠 家事パスLINE専用テンプレート</h3>
+                                        <p className="text-sm text-green-700">
+                                            家事パスLINE（https://kchlg1kw.autosns.app/line）専用の返信テンプレートです。
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {Object.entries(replyTemplates).map(([key, template]) => (
+                                            <div key={key} className="border border-gray-200 rounded-lg p-4 hover:border-green-300 transition-colors">
+                                                <h4 className="font-bold text-gray-800 mb-2">{template.title}</h4>
+                                                <p className="text-sm text-gray-600 mb-3">
+                                                    {template.template.substring(0, 100)}...
+                                                </p>
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedTemplate(key);
+                                                        setReplyText(template.template);
+                                                        setActiveTab('messages');
+                                                    }}
+                                                    className="w-full py-2 px-4 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition-colors"
+                                                >
+                                                    このテンプレートを使用
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="p-4 bg-blue-50 rounded-lg">
+                                        <h4 className="font-bold text-blue-800 mb-2">📋 使用方法</h4>
+                                        <ol className="text-sm text-blue-700 list-decimal list-inside space-y-1">
+                                            <li>メール返信タブで受信メールの内容を入力</li>
+                                            <li>適切なテンプレートを選択</li>
+                                            <li>「返信文を生成」をクリック</li>
+                                            <li>生成された返信文をコピーまたはメール送信</li>
+                                        </ol>
+                                    </div>
+
+                                    <div className="p-4 bg-yellow-50 rounded-lg">
+                                        <h4 className="font-bold text-yellow-800 mb-2">🔗 家事パスLINE情報</h4>
+                                        <p className="text-sm text-yellow-700">
+                                            <strong>LINE公式アカウント:</strong> <a href="https://kchlg1kw.autosns.app/line" target="_blank" className="underline">https://kchlg1kw.autosns.app/line</a>
+                                        </p>
+                                        <p className="text-sm text-yellow-700 mt-1">
+                                            <strong>サービス内容:</strong> 家事代行、お掃除、料理、買い物、洗濯等
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<KajiPassAutoReply />);
+    </script>
+</body>
+</html>
